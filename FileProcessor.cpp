@@ -7,6 +7,7 @@
 //
 //  Start takes three tokens not only two while still being a directive
 //  Base takes two tokens not only one while still being a directive
+//  Handel ascii spaces in string literals
 //
 //
 
