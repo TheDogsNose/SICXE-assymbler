@@ -1,0 +1,37 @@
+0   COPY    Start   0000
+1   FIRST   STL     RETADR
+2           LDB     #LENGTH
+3   BASE    LENGTH
+.
+.comments are based
+.
+4   CLOOP   +JSUB   RDREC
+5           LDA     LENGTH
+6           COMP    #0
+7           JEQ     ENDFIL
+8           +JSUB   WRREC   .This is a comment
+9           J       CLOOP
+10  ENDFIL  LDA     EOF
+11          STA     BUFFER
+12          LDA     #3
+13          STA     LENGTH
+14          +JSUB   WRREC
+15          J       @RETADR
+16  EOF     BYTE    C’EOF’
+17  RETADR  RESW    1
+18  LENGTH  RESW    1
+19  BUFFER  RESB    4096
+20  RDREC   CLEAR   X
+21          CLEAR   A
+22          CLEAR   S
+23          +LDT    #4096
+24  RLOOP   TD      INPUT
+25          JEQ     RLOOP
+26          RD      INPUT
+27          COMPR   A,S
+28          JEQ     EXIT
+29          STCH    BUFFER,X
+30          TIXR    T
+31          JLT     RLOOP
+32  EXIT    STX     LENGTH
+33  END     COPY
