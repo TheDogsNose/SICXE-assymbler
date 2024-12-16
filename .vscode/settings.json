@@ -111,5 +111,6 @@
     "numbers": "cpp",
     "span": "cpp",
     "text_encoding": "cpp"
-  }
+  },
+  "C_Cpp.default.compilerPath": "C:\\mingw64\\bin\\g++.exe"
 }

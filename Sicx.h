@@ -7,21 +7,21 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
 #ifndef _frmttt
 #define _frmttt
 namespace sicx
 {
-    
-    template <typename T> class Instruction
+
+    template <typename T>
+    class Instruction
     {
     private:
     public:
         std::string label;
         T inst;
 
-        Instruction(/* args */){}
-        ~Instruction(){}
+        Instruction(/* args */) {}
+        ~Instruction() {}
     };
 
     // Instruction::Instruction(/* args */)
@@ -31,7 +31,6 @@ namespace sicx
     // Instruction::~Instruction()
     // {
     // }
-
 
     struct Directive
     {
@@ -45,7 +44,7 @@ namespace sicx
         std::string type;
         std::string value;
     };
-    
+
     struct Format1
     {
         int LineNumber;
@@ -64,7 +63,7 @@ namespace sicx
     {
         int LineNumber;
         int Location;
-        char nixbpe;  //00-000000
+        char nixbpe; // 00-000000
         std::string instruction;
         std::string memory;
     };
@@ -77,12 +76,13 @@ namespace sicx
         std::string memory;
         std::string condition;
     };
-    #endif
+#endif
 
-    #ifndef _insttt
-    #define _insttt
+#ifndef _insttt
+#define _insttt
 
-    struct _inst {
+    struct _inst
+    {
         std::string mnemonic;
         std::string opcode;
         int format;
@@ -156,23 +156,22 @@ namespace sicx
     };
 
     std::unordered_map<std::string, int> directiveTable = {
-        {"START", 0},
-        {"END", 0},
-        {"BYTE", 1},
-        {"WORD", 1},
-        {"RESB", 1},
-        {"RESW",1},
-        {"BASE", 0},
+        {"START", 3},
+        {"END", 1},
+        {"BYTE", 2},
+        {"WORD", 2},
+        {"RESB", 2},
+        {"RESW", 2},
+        {"BASE", 1},
         {"NOBASE", 0},
-        {"USE", 0},
-        {"EQU", 0},
-        {"ORG", 0},
+        {"EQU", 3},
+        {"ORG", 1},
         {"LTORG", 0},
-        {"EXTDEF", 0},
-        {"EXTREF", 0},
-        {"CSECT", 0},
+        {"USE", 1},
+        //{"EXTDEF", 1},
+        //{"EXTREF", 1},
+        //{"CSECT", },
     };
-
 }
 
 #endif
