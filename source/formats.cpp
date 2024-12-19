@@ -64,7 +64,7 @@ namespace sicx
         Inst inst;
 
         unsigned int location = 0;
-        unsigned int objectCode = 0;
+        string objectCode = "";
         BLOCK block = DEFAULT;
 
         Instruction(/* args */) {}
@@ -216,8 +216,13 @@ namespace sicx
                             return -1;
                         }
                     }
+                    if (!imm && !ind)
+                    {
+                        ind = true;
+                        imm = true;
+                    }
 
-                    x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token1, token2};
+                    x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token1, (imm != ind) ? token2.substr(1) : token2};
                     inst = x;
                     break;
                 }
@@ -231,8 +236,17 @@ namespace sicx
                     token3 = toUpperCase(token3);
                     lineStream >> token4;
                     token4 = toUpperCase(token4);
-                    x = {token1, token2, token3, token4};
+                    if (token1 == "CJUMP")
+                    {
+                        x = {token1, "", token2, token3};
+                    }
+                    else
+                    {
+                        x = {token1, token2, token3, token4};
+                    }
+
                     inst = x;
+
                     break;
                 }
                 default:
@@ -353,8 +367,13 @@ namespace sicx
                                     return -1;
                                 }
                             }
+                            if (!imm && !ind)
+                            {
+                                ind = true;
+                                imm = true;
+                            }
 
-                            x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token2, token3};
+                            x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token2, (imm != ind) ? token2.substr(1) : token2};
                             inst = x;
                             break;
                         }
@@ -369,6 +388,14 @@ namespace sicx
                             lineStream >> token5;
                             token5 = toUpperCase(token5);
                             x = {token2, token3, token4, token5};
+                            if (token2 == "CJUMP")
+                            {
+                                x = {token2, "", token3, token4};
+                            }
+                            else
+                            {
+                                x = {token2, token3, token4, token5};
+                            }
                             inst = x;
                             break;
                         }

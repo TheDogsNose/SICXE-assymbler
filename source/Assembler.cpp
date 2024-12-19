@@ -59,11 +59,28 @@ string skipLeadingNumbers(const string &line)
     }
     return line.substr(pos); // Return the line starting from the first non-numeric character
 }
-string toUpperCase(const string &str)
+
+bool isHexadecimal(const std::string &str)
 {
-    string upperStr = str;
-    transform(upperStr.begin(), upperStr.end(), upperStr.begin(), ::toupper);
-    return upperStr;
+    size_t start = 0;
+
+    // Check if the string starts with "0x" or "0X"
+    if (str.size() > 2 && (str[0] == '0') && (str[1] == 'x' || str[1] == 'X'))
+    {
+        start = 2;
+    }
+
+    // Ensure the rest of the string contains only hexadecimal digits
+    for (size_t i = start; i < str.size(); ++i)
+    {
+        if (!std::isxdigit(str[i]))
+        {
+            return false;
+        }
+    }
+
+    // The string is a valid hexadecimal number
+    return (start != str.size()); // Ensure it's not just "0x" without digits
 }
 
 unsigned int sizeOfLiteral(string lit)
@@ -158,6 +175,9 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
     unsigned int startAddr;
     BLOCK bloc = DEFAULT;
     list<string> literals;
+    list<tuple<int, string>> Literals;
+    int index = 0;
+    int indexx = 0;
     loc = &defloc;
     list<tuple<unsigned int, string, BLOCK>> symbls;
     blockmap = {
@@ -199,10 +219,21 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
             }
             else if (get<Directive>(inst.inst).dir == "LTORG")
             {
+                auto instit = instructions.begin();
+                advance(instit, index + 1);
                 for (string literal : literals)
                 {
                     int x = sizeOfLiteral(literal);
                     symbls.push_back({*loc, literal, bloc});
+
+                    Instruction w;
+                    Directive d = {"*", literal};
+                    w.inst = d;
+                    w.location = *loc;
+                    w.block = bloc;
+                    instructions.insert(instit, w);
+                    indexx++;
+
                     *loc += x;
                 }
                 literals.clear();
@@ -322,7 +353,9 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
             {
                 auto it = std::find(literals.begin(), literals.end(), get<Format34>(inst.inst).memory);
                 if (it == literals.end())
+                {
                     literals.push_back(get<Format34>(inst.inst).memory);
+                }
             }
             inst.block = bloc;
             inst.location = *loc;
@@ -342,13 +375,25 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
             {
                 auto it = std::find(literals.begin(), literals.end(), get<Format4f>(inst.inst).memory);
                 if (it == literals.end())
+                {
                     literals.push_back(get<Format4f>(inst.inst).memory);
+                }
             }
             inst.block = bloc;
             inst.location = *loc;
             *loc += 4;
         }
+        index++;
     }
+
+    for (string literal : literals)
+    {
+        int x = sizeOfLiteral(literal);
+        symbls.push_back({*loc, literal, bloc});
+        *loc += x;
+    }
+    literals.clear();
+
     blockmap[DEFAULT] = {startAddr, defloc};
     blockmap[DEFAULTB] = {startAddr + defloc, defbloc};
     blockmap[CDATA] = {defbloc + startAddr + defloc, dataloc};
@@ -357,6 +402,10 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
     for (Instruction &inst : instructions)
     {
         if (!holds_alternative<Directive>(inst.inst))
+        {
+            inst.location += blockmap[inst.block].addr;
+        }
+        else if (get<Directive>(inst.inst).dir == "*")
         {
             inst.location += blockmap[inst.block].addr;
         }
@@ -383,6 +432,250 @@ void symbolsToString(list<string> &strings, list<Symbol> &symbols)
         string x = hexStr + "\t" + get<1>(symb);
         strings.push_back(x);
     }
+}
+int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
+{
+    unsigned int baseptr = 0;
+
+    for (Instruction &inst : instructions)
+    { // Use reference to modify original instructions
+        stringstream ss;
+
+        if (holds_alternative<Format1>(inst.inst))
+        {
+            // Format 1: Single-byte opcode
+            auto it = opcodeTable.find(get<Format1>(inst.inst).instruction);
+            if (it != opcodeTable.end())
+            {
+                inst.objectCode = it->second.opcode; // Opcode is the object code
+            }
+        }
+        else if (holds_alternative<Format2>(inst.inst))
+        {
+            // Format 2: Opcode + 2 registers
+            auto it = opcodeTable.find(get<Format2>(inst.inst).instruction);
+            if (it != opcodeTable.end())
+            {
+                string op = it->second.opcode;
+                int reg1 = 0, reg2 = 0;
+
+                // Get register numbers
+                auto reg1it = registerTable.find(get<Format2>(inst.inst).register1);
+                if (reg1it != registerTable.end())
+                {
+                    reg1 = reg1it->second;
+                }
+                auto reg2it = registerTable.find(get<Format2>(inst.inst).register2);
+                if (reg2it != registerTable.end())
+                {
+                    reg2 = reg2it->second;
+                }
+
+                ss << op << uppercase << hex << reg1 << reg2;
+                inst.objectCode = ss.str();
+            }
+        }
+        else if (holds_alternative<Format34>(inst.inst))
+        {
+            // Format 3 and 4: Opcode + nixbpe + displacement/address
+            auto it = opcodeTable.find(get<Format34>(inst.inst).instruction);
+            if (it != opcodeTable.end())
+            {
+                string op = it->second.opcode;
+                string label = get<Format34>(inst.inst).memory;
+
+                unsigned int memaddr = 0;
+                long dis = 0;
+
+                // Find memory address of label
+                auto memit = find_if(symbols.begin(), symbols.end(), [label](const Symbol &sym)
+                                     { return std::get<1>(sym) == label; });
+
+                bool _immf = false;
+                if (memit != symbols.end())
+                {
+                    memaddr = std::get<0>(*memit); // Address from symbol table
+                }
+                else if (get<Format34>(inst.inst).nixbpe & 0b010000 && isHexadecimal(label))
+                {
+                    _immf = true;
+                    memaddr = stoi(label, 0, 10);
+                }
+                else
+                {
+                    cout << "Unable to resolve label: " << label << endl;
+                }
+
+                // Extended (Format 4) or PC/Base relative addressing (Format 3)
+                if (get<Format34>(inst.inst).nixbpe & 0b000001)
+                { // Extended addressing
+                    unsigned int opc = stoi(op, 0, 16) + ((get<Format34>(inst.inst).nixbpe & 0b111000) >> 4);
+                    ss << setw(2) << setfill('0') << hex << opc;
+                    ss << setw(1) << setfill('0') << hex << (get<Format34>(inst.inst).nixbpe & 0b001111);
+                    ss << setw(5) << setfill('0') << hex << memaddr;
+                    cout << "format 4: " << ss.str() << "\t" << inst.toString() << endl;
+                }
+                else
+                { // PC or Base relative
+                    char nixbpe = get<Format34>(inst.inst).nixbpe;
+                    if (!_immf)
+                    {
+                        dis = static_cast<long>(memaddr) - static_cast<long>(inst.location + 3);
+
+                        if (dis >= -2048 && dis <= 2047)
+                        {                       // PC-relative
+                            nixbpe |= 0b000010; // Set PC-relative flag
+                            cout << "format 3 PC: " << ss.str() << "\t" << inst.toString() << endl;
+                        }
+                        else
+                        { // Base-relative
+                            dis = static_cast<long>(memaddr) - static_cast<long>(baseptr);
+                            nixbpe |= 0b000100; // Set Base-relative flag
+                            cout << "format 3 base: " << ss.str() << "\t" << inst.toString() << endl;
+                        }
+                    }
+                    else
+                    {
+                        dis = memaddr;
+                    }
+                    unsigned int opc = stoi(op, 0, 16) + ((nixbpe & 0b111000) >> 4);
+                    ss << setw(2) << setfill('0') << hex << opc;
+                    ss << setw(1) << setfill('0') << hex << (nixbpe & 0b001111);
+                    ss << setw(3) << setfill('0') << hex << (dis & 0xFFF); // 12-bit displacement
+                }
+
+                inst.objectCode = ss.str();
+            }
+        }
+        else if (holds_alternative<Format4f>(inst.inst))
+        {
+            // Format 4: Extended addressing with full address
+            auto it = opcodeTable.find(get<Format4f>(inst.inst).instruction);
+            if (it != opcodeTable.end())
+            {
+                // 6 - 4 - 2 - 20
+
+                string op = it->second.opcode;
+                string label = get<Format4f>(inst.inst).memory;
+
+                unsigned int memaddr = 0;
+                auto memit = find_if(symbols.begin(), symbols.end(), [label](const Symbol &sym)
+                                     { return std::get<1>(sym) == label; });
+
+                if (memit != symbols.end())
+                {
+                    memaddr = std::get<0>(*memit);
+                }
+                else
+                {
+                    cout << "Unable to resolve label: " << label << endl;
+                }
+                unsigned int opc = stoi(op, 0, 16);
+
+                char reg = 0;
+                auto regit = registerTable.find(get<Format4f>(inst.inst).register1);
+                if (regit != registerTable.end())
+                {
+                    reg = regit->second;
+                }
+                char x = reg;
+                opc += (x >> 2);
+                reg = reg & 0b00000011;
+
+                char cond = 0;
+
+                if (toUpperCase(get<Format4f>(inst.inst).condition) == "Z")
+                {
+                    cond = 0b00;
+                }
+                else if (toUpperCase(get<Format4f>(inst.inst).condition) == "N")
+                {
+                    cond = 0b01;
+                }
+                else if (toUpperCase(get<Format4f>(inst.inst).condition) == "C")
+                {
+                    cond = 0b10;
+                }
+                else if (toUpperCase(get<Format4f>(inst.inst).condition) == "V")
+                {
+                    cond = 0b11;
+                }
+
+                cond += (reg << 2);
+
+                ss << setw(2) << setfill('0') << hex << opc;
+                ss << setw(1) << setfill('0') << hex << ((unsigned int)cond);
+                ss << setw(5) << setfill('0') << hex << memaddr;
+
+                cout << cond << endl;
+                inst.objectCode = ss.str();
+            }
+        }
+        else if (holds_alternative<Data>(inst.inst))
+        {
+            // Data instructions (e.g., BYTE, WORD)
+            if (get<Data>(inst.inst).type == "BYTE")
+            {
+                string value = get<Data>(inst.inst).value;
+                if (value[0] == 'X')
+                {
+                    // Hexadecimal literal
+                    inst.objectCode = value.substr(2, value.size() - 3); // Remove X' and '
+                }
+                else if (value[0] == 'C')
+                {
+                    // Character literal
+                    string chars = value.substr(2, value.size() - 3); // Remove C' and '
+                    for (char c : chars)
+                    {
+                        ss << hex << (int)c;
+                    }
+                    inst.objectCode = ss.str();
+                }
+            }
+            else if (get<Data>(inst.inst).type == "WORD")
+            {
+                int wordValue = stoi(get<Data>(inst.inst).value);
+                ss << setw(6) << setfill('0') << hex << wordValue;
+                inst.objectCode = ss.str();
+            }
+        }
+        else if (holds_alternative<Directive>(inst.inst))
+        {
+            // Directives (e.g., BASE, NOBASE)
+            if (get<Directive>(inst.inst).dir == "BASE")
+            {
+                string label = get<Directive>(inst.inst).T;
+                auto memit = find_if(symbols.begin(), symbols.end(), [label](const Symbol &sym)
+                                     { return std::get<1>(sym) == label; });
+                if (memit != symbols.end())
+                {
+                    baseptr = std::get<0>(*memit); // Update base register
+                }
+                else
+                {
+                    cout << "Unable to resolve label: " << label << endl;
+                }
+            }
+            else if (get<Directive>(inst.inst).dir == "*")
+            {
+                auto lit = get<Directive>(inst.inst).T;
+                if (lit[1] == 'C' || lit[1] == 'c')
+                {
+                    return lit.length() - 4;
+                }
+                else if (lit[1] == 'x' || lit[1] == 'X')
+                {
+                    lit.erase(std::remove(lit.begin(), lit.end(), '\''), lit.end());
+                    int x = lit.length() - 2;
+                    x = (int)ceil((double)x / 2.0);
+                    return (unsigned)x;
+                }
+            }
+        }
+    }
+
+    return 0; // Return success
 }
 
 #endif

@@ -30,6 +30,9 @@ main(int argc, char *argv[])
 
   WriteLines("", "intermediate.txt", lines);
 
+  lines.clear();
+  ReadLines("", "intermediate.txt", lines);
+
   for (string &line : lines)
   {
     sicx::Instruction inst;
@@ -68,6 +71,21 @@ main(int argc, char *argv[])
     lines2.push_back(str);
   }
   WriteLines("", "pass1.txt", lines2);
+
+  objCodeCalc(insts, symbols);
+  for (sicx::Instruction inst : insts)
+  {
+    cout << "Location: " << hex << inst.location << ", Object Code: " << inst.objectCode << endl;
+  }
+  lines2.clear();
+
+  for (sicx::Instruction inst : insts)
+  {
+    stringstream ss;
+    ss << setw(4) << setfill('0') << hex << uppercase << inst.location << "\t\t" << inst.toString() << "\t\t\t" << uppercase << inst.objectCode;
+    lines2.push_back(ss.str());
+  }
+  WriteLines("", "pass2.txt", lines2);
 
   cin.get();
 }
