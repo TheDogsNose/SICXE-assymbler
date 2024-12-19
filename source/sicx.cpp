@@ -12,12 +12,6 @@ using namespace std;
 
 main(int argc, char *argv[])
 {
-  // 1. Parse command line arguments
-  // 2. Initialize the SICX library
-  // 3. Start the SICX server
-  // 4. Wait for incoming connections
-  // 5. Handle incoming connections
-  // 6. Clean up and exit
 
   list<string> lines;
   list<sicx::Instruction> insts;
