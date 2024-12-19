@@ -85,7 +85,7 @@ namespace sicx
             {
                 // find if '+', '@' or '#' should be added
                 bool ind = false, imm = false, regx = false, ext = false;
-                if (get<Format34>(inst).nixbpe & 0b110000 || (~(get<Format34>(inst).nixbpe) & 0b110000))
+                if (((get<Format34>(inst).nixbpe & 0b100000) && (get<Format34>(inst).nixbpe & 0b010000)) || ((~(get<Format34>(inst).nixbpe) & 0b100000) && (~(get<Format34>(inst).nixbpe) & 0b010000)))
                 {
                     ind = false;
                     imm = false;
@@ -108,8 +108,7 @@ namespace sicx
                 {
                     ext = true;
                 }
-                return (label.empty() ? "\t" : label) + "\t" + (ext ? "+" : "") + get<Format34>(inst).instruction + "\t\t" + (ind ? "@" : imm ? "#"
-                                                                                                                                              : "") +
+                return (label.empty() ? "\t" : label) + "\t" + (ext ? "+" : "") + get<Format34>(inst).instruction + "\t\t" + (ind ? "@" : "") + (imm ? "#" : "") +
                        get<Format34>(inst).memory + (regx ? ",X" : "");
             }
             else if (holds_alternative<Format4f>(inst))
@@ -193,16 +192,21 @@ namespace sicx
                     Format34 x;
                     label = "";
                     lineStream >> token2;
-                    token2 = toUpperCase(token2);
 
                     bool regx = false, ind = false, imm = false;
                     if (token2[0] == '#')
                     {
+                        token2 = toUpperCase(token2);
                         imm = true;
                     }
                     else if (token2[0] == '@')
                     {
+                        token2 = toUpperCase(token2);
                         ind = true;
+                    }
+                    else if (token2[0] != '=')
+                    {
+                        token2 = toUpperCase(token2);
                     }
 
                     if (lineStream >> token3)
@@ -344,16 +348,21 @@ namespace sicx
                             Format34 x;
                             label = token1;
                             lineStream >> token3;
-                            token3 = toUpperCase(token3);
 
                             bool regx = false, ind = false, imm = false;
                             if (token3[0] == '#')
                             {
+                                token3 = toUpperCase(token3);
                                 imm = true;
                             }
                             else if (token3[0] == '@')
                             {
+                                token3 = toUpperCase(token3);
                                 ind = true;
+                            }
+                            else if (token3[0] != '=')
+                            {
+                                token3 = toUpperCase(token3);
                             }
 
                             if (lineStream >> token4)

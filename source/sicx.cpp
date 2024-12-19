@@ -87,5 +87,10 @@ main(int argc, char *argv[])
   }
   WriteLines("", "pass2.txt", lines2);
 
+  list<string> htme;
+  generateHTMERecords(insts, htme);
+  WriteLines("", "HTME.txt", htme);
+
+  cout << calculateProgramLength(insts);
   cin.get();
 }

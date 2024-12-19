@@ -1,12 +1,10 @@
 PRROGA  START   0000
         USE     DEFAULTB
         LDA     =C'A'
-        LDA     =X'34'
-        LDA     =C'Hello'
+
         +LDB    #RESULT
         BASE    RESULT
-        ADD     WOD
-        STA     =C'A'
+        ADD     WOD,x
         LDT     #256
         USE
         TIO
@@ -35,6 +33,6 @@ BUFFER  RESB    10
 RETADRR RESB    4096
 RESULT  RESW    1
         USE     CDATA
-        LTORG
 LENGTH  BYTE   X'FF'
+        LTORG
         END     0000

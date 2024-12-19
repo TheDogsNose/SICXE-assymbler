@@ -104,6 +104,57 @@ unsigned int sizeOfLiteral(string lit)
     }
 }
 
+unsigned int calculateProgramLength(const list<Instruction> &instructions)
+{
+    if (instructions.empty())
+    {
+        return 0; // No instructions in the list
+    }
+
+    unsigned int minAddress = UINT_MAX; // Start with the largest possible value
+    unsigned int maxAddress = 0;        // Start with the smallest possible value
+
+    for (const auto &inst : instructions)
+    {
+        unsigned int currentLocation = inst.location;
+
+        // Find the size of the instruction or data
+        unsigned int size = 0;
+        if (holds_alternative<Data>(inst.inst))
+        {
+            if (get<Data>(inst.inst).type == "RESB")
+            {
+                if (get<Data>(inst.inst).value[0] == 'X' || get<Data>(inst.inst).value[0] == 'x')
+                    size = 1 * stoi(get<Data>(inst.inst).value, 0, 16);
+                else
+                    size = 1 * stoi(get<Data>(inst.inst).value, 0, 10);
+            }
+            else if (get<Data>(inst.inst).type == "RESW")
+            {
+                if (get<Data>(inst.inst).value[0] == 'X' || get<Data>(inst.inst).value[0] == 'x')
+                    size = 3 * stoi(get<Data>(inst.inst).value, 0, 16);
+                else
+                    size = 3 * stoi(get<Data>(inst.inst).value, 0, 10);
+            }
+            else
+            {
+                size = ceil((double)inst.objectCode.length() / 2);
+            }
+        }
+        else
+        {
+            size = ceil((double)inst.objectCode.length() / 2);
+        }
+
+        // Update the min and max addresses
+        minAddress = min(minAddress, currentLocation);
+        maxAddress = max(maxAddress, currentLocation + size);
+    }
+
+    // The length is the difference between max and min addresses
+    return maxAddress - minAddress;
+}
+
 void preProcess(string &line)
 {
 
@@ -662,20 +713,151 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
                 auto lit = get<Directive>(inst.inst).T;
                 if (lit[1] == 'C' || lit[1] == 'c')
                 {
-                    return lit.length() - 4;
+                    // return lit.length() - 4;
+                    stringstream ss;
+                    for (int i = 3; i < lit.length() - 1; i++)
+                    {
+                        ss << setw(2) << setfill('0') << hex << ((unsigned int)lit[i]);
+                    }
+                    inst.objectCode = ss.str();
                 }
                 else if (lit[1] == 'x' || lit[1] == 'X')
                 {
-                    lit.erase(std::remove(lit.begin(), lit.end(), '\''), lit.end());
-                    int x = lit.length() - 2;
-                    x = (int)ceil((double)x / 2.0);
-                    return (unsigned)x;
+                    stringstream ss;
+                    lit = lit.substr(3);
+                    unsigned int q = stoi(lit, 0, 16);
+                    ss << hex << q;
+                    inst.objectCode = ss.str();
+
+                    // return (unsigned)x;
                 }
             }
         }
     }
 
     return 0; // Return success
+}
+void generateHTMERecords(const list<Instruction> &instructions, list<string> &htmeRecords)
+{
+
+    list<string> mRecords;
+    stringstream ss;
+    string currentTextRecord = "";
+    unsigned int startAddress = 0;
+    unsigned int currentAddress = 0;
+    bool textRecordOpen = false;
+    unsigned int textRecordSize = 0; // Track size of current T record
+
+    // Add Header record
+    ss << "H^";
+    auto firstInst = instructions.begin();
+    if (firstInst != instructions.end())
+    {
+        ss << setw(6) << setfill(' ') << left << (firstInst->label.empty() ? "NONAME" : firstInst->label.substr(0, 6)) << "^";
+        ss << setw(6) << setfill('0') << right << hex << uppercase << firstInst->location << "^";
+        ss << setw(6) << setfill('0') << right << hex << uppercase << calculateProgramLength(instructions); // Approx program length
+    }
+    htmeRecords.push_back(ss.str());
+    ss.str("");
+    ss.clear();
+
+    for (const auto &inst : instructions)
+    {
+        // Text Record
+        if (!inst.objectCode.empty())
+        {
+            if (!textRecordOpen)
+            {
+                // Open a new text record
+                startAddress = inst.location;
+                currentTextRecord = "T^" + (stringstream() << setw(6) << setfill('0') << uppercase << hex << startAddress).str() + "^";
+                textRecordOpen = true;
+                textRecordSize = 0;
+            }
+
+            // Check if adding the object code exceeds 1E (30 bytes)
+            if (textRecordSize + inst.objectCode.size() / 2 > 0x1E)
+            {
+                // Close the current text record
+                unsigned int length = textRecordSize;
+                currentTextRecord.insert(9, (stringstream() << setw(2) << setfill('0') << uppercase << hex << length << '^').str());
+                htmeRecords.push_back(currentTextRecord);
+
+                // Start a new text record
+                startAddress = inst.location;
+                currentTextRecord = "T^" + (stringstream() << setw(6) << setfill('0') << uppercase << hex << startAddress).str() + "^";
+                textRecordSize = 0;
+            }
+
+            currentTextRecord += inst.objectCode + "^";
+            currentAddress = inst.location;
+            textRecordSize += ceil((double)inst.objectCode.size() / 2); // Increment size in bytes
+        }
+        else if (holds_alternative<Directive>(inst.inst))
+        {
+            if (get<Directive>(inst.inst).dir == "USE")
+            {
+                // Close the current text record if open
+                if (textRecordOpen)
+                {
+                    unsigned int length = textRecordSize;
+                    currentTextRecord.insert(9, (stringstream() << setw(2) << setfill('0') << uppercase << hex << length << '^').str());
+                    htmeRecords.push_back(currentTextRecord);
+                    textRecordOpen = false;
+                }
+            }
+        }
+        else if (holds_alternative<Data>(inst.inst))
+        {
+            if (get<Data>(inst.inst).type == "RESW" || get<Data>(inst.inst).type == "RESB")
+            {
+                // Close the current text record if open
+                if (textRecordOpen)
+                {
+                    unsigned int length = textRecordSize;
+                    currentTextRecord.insert(9, (stringstream() << setw(2) << setfill('0') << uppercase << hex << length << '^').str());
+                    htmeRecords.push_back(currentTextRecord);
+                    textRecordOpen = false;
+                }
+            }
+        }
+
+        // Modification Record
+        if (holds_alternative<Format34>(inst.inst))
+        {
+            if ((get<Format34>(inst.inst).nixbpe & 0b000001) && !((get<Format34>(inst.inst).nixbpe & 0b010000) && (~(get<Format34>(inst.inst).nixbpe) & 0b100000)))
+            { // Extended addressing
+                ss << "M^" << setw(6) << setfill('0') << hex << uppercase << inst.location + 1 << "^05";
+                mRecords.push_back(ss.str());
+                ss.str("");
+                ss.clear();
+            }
+        }
+        else if (holds_alternative<Format4f>(inst.inst))
+        {
+            ss << "M^" << setw(6) << setfill('0') << hex << uppercase << inst.location + 1 << "^05";
+            mRecords.push_back(ss.str());
+            ss.str("");
+            ss.clear();
+        }
+    }
+
+    // Close any remaining text record
+    if (textRecordOpen)
+    {
+        unsigned int length = textRecordSize;
+        currentTextRecord.insert(9, (stringstream() << setw(2) << setfill('0') << uppercase << hex << length << '^').str());
+        htmeRecords.push_back(currentTextRecord);
+    }
+
+    // add M record
+    for (auto m : mRecords)
+    {
+        htmeRecords.push_back(m);
+    }
+    // Add End record
+    ss << "E^" << setw(6) << setfill('0') << hex << uppercase << instructions.front().location;
+    htmeRecords.push_back(ss.str());
 }
 
 #endif
