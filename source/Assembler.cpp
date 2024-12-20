@@ -329,7 +329,14 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
                 }
                 inst.block = bloc;
                 inst.location = *loc;
-                *loc += 1;
+                if (get<Data>(inst.inst).value[0] == 'C')
+                {
+                    *loc += sizeOfLiteral("=" + get<Data>(inst.inst).value);
+                }
+                else
+                {
+                    *loc += 1;
+                }
             }
             else if (get<Data>(inst.inst).type == "WORD")
             {

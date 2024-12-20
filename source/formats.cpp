@@ -382,7 +382,7 @@ namespace sicx
                                 imm = true;
                             }
 
-                            x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token2, (imm != ind) ? token2.substr(1) : token2};
+                            x = {(char)(0 | (ext) | (ind << 5) | (imm << 4) | (regx << 3)), token2, (imm != ind) ? token3.substr(1) : token3};
                             inst = x;
                             break;
                         }

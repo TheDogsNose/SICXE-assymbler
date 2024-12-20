@@ -22,10 +22,8 @@ main(int argc, char *argv[])
     preProcess(line);
   }
 
-  WriteLines("", "intermediate.txt", lines);
-
-  lines.clear();
-  ReadLines("", "intermediate.txt", lines);
+  // lines.clear();
+  // ReadLines("", "intermediate.txt", lines);
 
   for (string &line : lines)
   {
@@ -36,6 +34,13 @@ main(int argc, char *argv[])
     else
       cout << "Error parsing line: " << line << endl;
   }
+  lines.clear();
+
+  for (sicx::Instruction inst : insts)
+  {
+    lines.push_back(inst.toString());
+  }
+  WriteLines("", "intermediate.txt", lines);
 
   list<Symbol> symbols;
   BlockMap blockmap;
