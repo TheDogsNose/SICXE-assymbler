@@ -84,14 +84,37 @@ int main(int argc, char *argv[]) {
             }
 
             case 3: {
-                if (LOCCTRCalc(insts, symbols, blockmap) != 0) {
-                    cout << "Error during LOCCTR calculation!" << endl;
-                    return -1;
+                cout << "\nPerforming Pass 1...\n";
+                if (LOCCTRCalc(insts, symbols, blockmap) != 0)
+                {
+                    cout << "Error during Pass 1; terminating.\n";
+                    break;
                 }
+
+                // Write symbol table to symbTable.txt
                 list<string> symbolTXT;
                 symbolsToString(symbolTXT, symbols);
                 WriteLines("", "symbTable.txt", symbolTXT);
-                cout << "Symbol table generated: symbTable.txt" << endl;
+
+                // Write Pass 1 details to pass1.txt
+                list<string> pass1Lines;
+                for (const sicx::Instruction &inst : insts)
+                {
+                    stringstream ss;
+
+                    // Set the formatting for 4-digit hexadecimal with leading zeros
+                    ss << setw(4) << setfill('0') << hex << uppercase << inst.location - blockmap[inst.block].addr;
+
+                    string loc = ss.str();
+
+                    // Use const_cast to call non-const toString method
+                    string instDetails = loc + "\t\t\t" + const_cast<sicx::Instruction &>(inst).toString();
+
+                    pass1Lines.push_back(instDetails);
+                }
+
+                WriteLines("", "pass1.txt", pass1Lines);
+                cout << "Pass 1 completed successfully. Symbol table and pass1.txt generated.\n";
                 break;
             }
 
