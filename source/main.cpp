@@ -11,31 +11,31 @@
 using namespace std;
 
 void displayMenu() {
-    cout << "\n===== SIC/XE Assembler =====" << endl;
-    cout << "1. Preprocess Input File" << endl;
-    cout << "2. Generate Intermediate File" << endl;
-    cout << "3. Perform Pass 1 (Symbol Table and Locations)" << endl;
-    cout << "4. Perform Pass 2 (Generate Object Code)" << endl;
-    cout << "5. Generate HTME Records" << endl;
-    cout << "6. View Output Files" << endl;
-    cout << "7. Exit" << endl;
-    cout << "============================" << endl;
-    cout << "Enter your choice: ";
+    cout << "\n\033[1;34m===== SIC/XE Assembler =====\033[0m" << endl;
+    cout << "\033[32m1. Preprocess Input File\033[0m" << endl;
+    cout << "\033[33m2. Generate Intermediate File\033[0m" << endl;
+    cout << "\033[34m3. Perform Pass 1 (Symbol Table and Locations)\033[0m" << endl;
+    cout << "\033[36m4. Perform Pass 2 (Generate Object Code)\033[0m" << endl;
+    cout << "\033[35m5. Generate HTME Records\033[0m" << endl;
+    cout << "\033[37m6. View Output Files\033[0m" << endl;
+    cout << "\033[31m7. Exit\033[0m" << endl;
+    cout << "\033[1;34m============================\033[0m" << endl;
+    cout << "\033[1;33mEnter your choice: \033[0m";
 }
 
 void viewFiles(const string &fileName) {
     ifstream file(fileName);
     if (file.is_open()) {
         string line;
-        cout << "\nContents of " << fileName << ":\n";
-        cout << "--------------------------------" << endl;
+        cout << "\n\033[1;36mContents of " << fileName << ":\033[0m\n";
+        cout << "\033[1;34m--------------------------------\033[0m" << endl;
         while (getline(file, line)) {
             cout << line << endl;
         }
-        cout << "--------------------------------" << endl;
+        cout << "\033[1;34m--------------------------------\033[0m" << endl;
         file.close();
     } else {
-        cout << "Unable to open file: " << fileName << endl;
+        cout << "\033[31mUnable to open file: " << fileName << "\033[0m" << endl;
     }
 }
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
                 for (string &line : lines) {
                     preProcess(line);
                 }
-                cout << "Preprocessing completed!" << endl;
+                cout << "\033[32mPreprocessing completed!\033[0m" << endl;
                 break;
             }
 
@@ -72,22 +72,22 @@ int main(int argc, char *argv[]) {
                     if (r == 0)
                         insts.push_back(inst);
                     else
-                        cout << "Error parsing line: " << line << endl;
+                        cout << "\033[33mError parsing line: \033[0m" << line << endl;
                 }
                 lines.clear();
                 for (sicx::Instruction inst : insts) {
                     lines.push_back(inst.toString());
                 }
                 WriteLines("", "intermediate.txt", lines);
-                cout << "Intermediate file generated: intermediate.txt" << endl;
+                cout << "\033[32mIntermediate file generated: intermediate.txt\033[0m" << endl;
                 break;
             }
 
             case 3: {
-                cout << "\nPerforming Pass 1...\n";
+                cout << "\033[34mPerforming Pass 1...\033[0m" << endl;
                 if (LOCCTRCalc(insts, symbols, blockmap) != 0)
                 {
-                    cout << "Error during Pass 1; terminating.\n";
+                    cout << "\033[31mError during Pass 1; terminating.\033[0m" << endl;
                     break;
                 }
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 WriteLines("", "pass1.txt", pass1Lines);
-                cout << "Pass 1 completed successfully. Symbol table and pass1.txt generated.\n";
+                cout << "\033[32mPass 1 completed successfully. Symbol table and pass1.txt generated.\033[0m" << endl;
                 break;
             }
 
@@ -128,25 +128,25 @@ int main(int argc, char *argv[]) {
                     lines2.push_back(ss.str());
                 }
                 WriteLines("", "pass2.txt", lines2);
-                cout << "Pass 2 completed: Object code generated in pass2.txt" << endl;
+                cout << "\033[32mPass 2 completed: Object code generated in pass2.txt\033[0m" << endl;
                 break;
             }
 
             case 5: {
                 generateHTMERecords(insts, htme);
                 WriteLines("", "HTME.txt", htme);
-                cout << "HTME records generated: HTME.txt" << endl;
+                cout << "\033[32mHTME records generated: HTME.txt\033[0m" << endl;
                 break;
             }
 
             case 6: {
-                cout << "\nSelect a file to view:" << endl;
-                cout << "1. Intermediate File (intermediate.txt)" << endl;
-                cout << "2. Symbol Table (symbTable.txt)" << endl;
-                cout << "3. Pass 1 Output (pass1.txt)" << endl;
-                cout << "4. Pass 2 Output (pass2.txt)" << endl;
-                cout << "5. HTME Records (HTME.txt)" << endl;
-                cout << "Enter your choice: ";
+                cout << "\n\033[36mSelect a file to view:\033[0m" << endl;
+                cout << "\033[32m1. Intermediate File (intermediate.txt)\033[0m" << endl;
+                cout << "\033[33m2. Symbol Table (symbTable.txt)\033[0m" << endl;
+                cout << "\033[34m3. Pass 1 Output (pass1.txt)\033[0m" << endl;
+                cout << "\033[36m4. Pass 2 Output (pass2.txt)\033[0m" << endl;
+                cout << "\033[35m5. HTME Records (HTME.txt)\033[0m" << endl;
+                cout << "\033[1;33mEnter your choice: \033[0m";
                 int fileChoice;
                 cin >> fileChoice;
                 switch (fileChoice) {
@@ -155,19 +155,19 @@ int main(int argc, char *argv[]) {
                     case 3: viewFiles("pass1.txt"); break;
                     case 4: viewFiles("pass2.txt"); break;
                     case 5: viewFiles("HTME.txt"); break;
-                    default: cout << "Invalid choice!" << endl; break;
+                    default: cout << "\033[31mInvalid choice!\033[0m" << endl; break;
                 }
                 break;
             }
 
             case 7: {
                 running = false;
-                cout << "Exiting the assembler. Goodbye!" << endl;
+                cout << "\033[1;31mExiting the assembler. Goodbye!\033[0m" << endl;
                 break;
             }
 
             default:
-                cout << "Invalid choice! Please try again." << endl;
+                cout << "\033[31mInvalid choice! Please try again.\033[0m" << endl;
         }
     }
 
