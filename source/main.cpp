@@ -196,6 +196,6 @@ int main(int argc, char *argv[])
 
         // cout << calculateProgramLength(insts);
     }
-
+    cout << "\33[0m";
     return 0;
 }

@@ -583,7 +583,7 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols, bool v)
                 }
                 else
                 {
-                    cout << "Unable to resolve label: " << label << endl;
+                    cout << "\33[31mUnable to resolve label: \33[0m" << label << endl;
                 }
 
                 // Extended (Format 4) or PC/Base relative addressing (Format 3)
@@ -645,7 +645,7 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols, bool v)
                 }
                 else
                 {
-                    cout << "Unable to resolve label: " << label << endl;
+                    cout << "\33[31mUnable to resolve label: \33[0m" << label << endl;
                 }
                 unsigned int opc = stoi(op, 0, 16);
 
@@ -731,7 +731,7 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols, bool v)
                 }
                 else
                 {
-                    cout << "Unable to resolve label: " << label << endl;
+                    cout << "\33[31mUnable to resolve label: \33[0m" << label << endl;
                 }
             }
             else if (get<Directive>(inst.inst).dir == "*")
