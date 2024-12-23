@@ -29,6 +29,7 @@ void displayHelp()
     cout << "  \033[1;36m--HTME\033[0m\tOutput the HTME file (HTME.txt)" << endl;
     cout << "  \033[1;36m--ALL / -A\033[0m\tOutput all files" << endl;
     cout << "  \033[1;36m--HELP / -H\033[0m\tDisplay this help message (Use without providing a file path)" << endl;
+    cout << "  \033[1;36m-v\033[0m\tDisplay all processes for debugging (Verbose)" << endl;
 }
 
 int main(int argc, char *argv[])
