@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
 
     if (pass1 || pass2 || symbol || inter || htme)
     {
-        ReadLines("", "in.txt", lines);
+        ReadLines("", "in.txt", lines, v);
         for (string &line : lines)
         {
-            preProcess(line);
+            preProcess(line, v);
         }
 
         for (string &line : lines)
@@ -130,13 +130,13 @@ int main(int argc, char *argv[])
             {
                 lines.push_back(inst.toString());
             }
-            WriteLines("", "intermediate.txt", lines);
+            WriteLines("", "intermediate.txt", lines, v);
             lines.clear();
         }
     }
     if (pass1 || pass2 || symbol || htme)
     {
-        if (LOCCTRCalc(insts, symbolslist, blockmap) != 0)
+        if (LOCCTRCalc(insts, symbolslist, blockmap, v) != 0)
         {
             cout << "\33[31mError Processing the Location Counter; terminating.";
             return -1;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
         if (symbol)
         {
             symbolsToString(lines, symbolslist);
-            WriteLines("", "symbTable.txt", lines);
+            WriteLines("", "symbTable.txt", lines, v);
             lines.clear();
         }
         if (pass1)
@@ -163,13 +163,13 @@ int main(int argc, char *argv[])
                 str = loc + "\t\t\t" + inst.toString();
                 lines.push_back(str);
             }
-            WriteLines("", "pass1.txt", lines);
+            WriteLines("", "pass1.txt", lines, v);
             lines.clear();
         }
     }
     if (pass2 || htme)
     {
-        objCodeCalc(insts, symbolslist);
+        objCodeCalc(insts, symbolslist, v);
         // for (sicx::Instruction inst : insts)
         // {
         //     cout << "Location: " << hex << inst.location << ", Object Code: " << inst.objectCode << endl;
@@ -183,15 +183,15 @@ int main(int argc, char *argv[])
                 ss << setw(4) << setfill('0') << hex << uppercase << inst.location << "\t\t" << inst.toString() << "\t\t\t" << uppercase << inst.objectCode;
                 lines.push_back(ss.str());
             }
-            WriteLines("", "pass2.txt", lines);
+            WriteLines("", "pass2.txt", lines, v);
             lines.clear();
         }
     }
     if (htme)
     {
         list<string> htme;
-        generateHTMERecords(insts, lines);
-        WriteLines("", "HTME.txt", lines);
+        generateHTMERecords(insts, lines, v);
+        WriteLines("", "HTME.txt", lines, v);
 
         // cout << calculateProgramLength(insts);
     }

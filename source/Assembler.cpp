@@ -83,7 +83,7 @@ bool isHexadecimal(const std::string &str)
     return (start != str.size()); // Ensure it's not just "0x" without digits
 }
 
-unsigned int sizeOfLiteral(string lit)
+unsigned int sizeOfLiteral(string lit, bool v)
 {
     if (lit[1] == 'C' || lit[1] == 'c')
     {
@@ -94,17 +94,22 @@ unsigned int sizeOfLiteral(string lit)
         lit.erase(std::remove(lit.begin(), lit.end(), '\''), lit.end());
         int x = lit.length() - 2;
         x = (int)ceil((double)x / 2.0);
+        if (v)
+            cout << "\33[92msize of \33[0m" << lit << " is " << x << endl;
         return (unsigned)x;
     }
     else
     {
         lit.erase(std::remove(lit.begin(), lit.end(), '\''), lit.end());
         int x = stoi(lit, 0, 10);
-        return (int)ceil(log2(x + 1) / 8);
+        x = (int)ceil(log2(x + 1) / 8);
+        if (v)
+            cout << "\33[92msize of \33[0m" << lit << " is " << x << endl;
+        return x;
     }
 }
 
-unsigned int calculateProgramLength(const list<Instruction> &instructions)
+unsigned int calculateProgramLength(const list<Instruction> &instructions, bool v)
 {
     if (instructions.empty())
     {
@@ -152,10 +157,12 @@ unsigned int calculateProgramLength(const list<Instruction> &instructions)
     }
 
     // The length is the difference between max and min addresses
+    if (v)
+        cout << "\33[92mprogram size was calculated to be: \33[0m" << maxAddress - minAddress << endl;
     return maxAddress - minAddress;
 }
 
-void preProcess(string &line)
+void preProcess(string &line, bool v)
 {
 
     line = skipLeadingNumbers(line); // skip line number if it exists
@@ -164,19 +171,24 @@ void preProcess(string &line)
     {
         line.erase(pos); // remove everything in the line after the dot (the comment) if it exists
     }
+    if (v)
+        cout << "\33[92mpreprocessed line: \33[0m" << line << endl;
 }
 
 // read lines from file
-int ReadLines(string path, string fileName, list<string> &lines)
+int ReadLines(string path, string fileName, list<string> &lines, bool v)
 {
     string line;
     ifstream file(path + fileName);
 
     if (!file)
     {
+        if (v)
+            cout << "\33[31mcouldn't open file" << endl;
         return -1;
     }
-
+    if (v)
+        cout << "\33[92mreading file " << path + fileName << endl;
     int lineNumber = 0;
     while (getline(file, line))
     {
@@ -202,14 +214,17 @@ int ReadLines(string path, string fileName, list<string> &lines)
 }
 
 // write list of lines into a file
-int WriteLines(string path, string fileName, list<string> &lines)
+int WriteLines(string path, string fileName, list<string> &lines, bool v)
 {
     ofstream file(path + fileName);
     if (!file)
     {
+        if (v)
+            cout << "\33[31mcouldn't open file" << endl;
         return 0;
     }
-
+    if (v)
+        cout << "\33[92mreading file " << path + fileName << endl;
     for (string line : lines)
     {
         if (!line.empty())
@@ -219,7 +234,7 @@ int WriteLines(string path, string fileName, list<string> &lines)
     return 1;
 }
 
-int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap &blockmap)
+int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap &blockmap, bool v)
 {
     unsigned int defloc, defbloc, dataloc, blksloc;
     unsigned int *loc;
@@ -274,7 +289,7 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
                 advance(instit, index + 1);
                 for (string literal : literals)
                 {
-                    int x = sizeOfLiteral(literal);
+                    int x = sizeOfLiteral(literal, v);
                     symbls.push_back({*loc, literal, bloc});
 
                     Instruction w;
@@ -331,7 +346,7 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
                 inst.location = *loc;
                 if (get<Data>(inst.inst).value[0] == 'C')
                 {
-                    *loc += sizeOfLiteral("=" + get<Data>(inst.inst).value);
+                    *loc += sizeOfLiteral("=" + get<Data>(inst.inst).value, v);
                 }
                 else
                 {
@@ -442,11 +457,14 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
             *loc += 4;
         }
         index++;
+
+        if (v)
+            cout << "\33[92mcalculated the location of \33[0m" << inst.toString() << "\33[92m" << *loc << endl;
     }
 
     for (string literal : literals)
     {
-        int x = sizeOfLiteral(literal);
+        int x = sizeOfLiteral(literal, v);
         symbls.push_back({*loc, literal, bloc});
         *loc += x;
     }
@@ -467,11 +485,15 @@ int LOCCTRCalc(list<Instruction> &instructions, list<Symbol> &symbols, BlockMap 
         {
             inst.location += blockmap[inst.block].addr;
         }
+        if (v)
+            cout << "\33[92mcalculated the location of \33[0m" << inst.toString() << "\33[92m" << inst.location << endl;
     }
     for (auto &symbl : symbls)
     {
         get<0>(symbl) += blockmap[get<2>(symbl)].addr;
         symbols.push_back({get<0>(symbl), get<1>(symbl)});
+        if (v)
+            cout << "\33[92mcalculated the location of \33[0m" << get<1>(symbl) << "\33[92m" << get<0>(symbl) << endl;
     }
 
     return 0;
@@ -491,7 +513,7 @@ void symbolsToString(list<string> &strings, list<Symbol> &symbols)
         strings.push_back(x);
     }
 }
-int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
+int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols, bool v)
 {
     unsigned int baseptr = 0;
 
@@ -737,11 +759,13 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
                 }
             }
         }
+        if (v)
+            cout << "\33[92mcalculated the object code of \33[0m" << inst.toString() << "\33[92m" << inst.objectCode << endl;
     }
 
     return 0; // Return success
 }
-void generateHTMERecords(const list<Instruction> &instructions, list<string> &htmeRecords)
+void generateHTMERecords(const list<Instruction> &instructions, list<string> &htmeRecords, bool v)
 {
 
     list<string> mRecords;
@@ -759,11 +783,13 @@ void generateHTMERecords(const list<Instruction> &instructions, list<string> &ht
     {
         ss << setw(6) << setfill(' ') << left << (firstInst->label.empty() ? "NONAME" : firstInst->label.substr(0, 6)) << "^";
         ss << setw(6) << setfill('0') << right << hex << uppercase << firstInst->location << "^";
-        ss << setw(6) << setfill('0') << right << hex << uppercase << calculateProgramLength(instructions); // Approx program length
+        ss << setw(6) << setfill('0') << right << hex << uppercase << calculateProgramLength(instructions, v); // Approx program length
     }
     htmeRecords.push_back(ss.str());
     ss.str("");
     ss.clear();
+    if (v)
+        cout << "\33[92mCalculated H Record" << endl;
 
     for (const auto &inst : instructions)
     {
