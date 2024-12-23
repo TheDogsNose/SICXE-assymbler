@@ -221,7 +221,7 @@ int WriteLines(string path, string fileName, list<string> &lines, bool v)
     {
         if (v)
             cout << "\33[31mcouldn't open file" << endl;
-        return 0;
+        return -1;
     }
     if (v)
         cout << "\33[92mreading file " << path + fileName << endl;
