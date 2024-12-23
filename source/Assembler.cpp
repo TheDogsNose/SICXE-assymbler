@@ -571,7 +571,6 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
                     ss << setw(2) << setfill('0') << hex << opc;
                     ss << setw(1) << setfill('0') << hex << (get<Format34>(inst.inst).nixbpe & 0b001111);
                     ss << setw(5) << setfill('0') << hex << memaddr;
-                    cout << "format 4: " << ss.str() << "\t" << inst.toString() << endl;
                 }
                 else
                 { // PC or Base relative
@@ -583,13 +582,11 @@ int objCodeCalc(list<Instruction> &instructions, list<Symbol> &symbols)
                         if (dis >= -2048 && dis <= 2047)
                         {                       // PC-relative
                             nixbpe |= 0b000010; // Set PC-relative flag
-                            cout << "format 3 PC: " << ss.str() << "\t" << inst.toString() << endl;
                         }
                         else
                         { // Base-relative
                             dis = static_cast<long>(memaddr) - static_cast<long>(baseptr);
                             nixbpe |= 0b000100; // Set Base-relative flag
-                            cout << "format 3 base: " << ss.str() << "\t" << inst.toString() << endl;
                         }
                     }
                     else

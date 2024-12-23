@@ -9,18 +9,18 @@
 #include <iomanip>
 
 using namespace std;
-
+int x;
 void displayMenu() {
     cout << "\n\033[1;34m===== SIC/XE Assembler =====\033[0m" << endl;
-    cout << "\033[32m1. Preprocess Input File\033[0m" << endl;
-    cout << "\033[33m2. Generate Intermediate File\033[0m" << endl;
-    cout << "\033[34m3. Perform Pass 1 (Symbol Table and Locations)\033[0m" << endl;
-    cout << "\033[36m4. Perform Pass 2 (Generate Object Code)\033[0m" << endl;
+    cout << "\033[35m1. Preprocess Input File\033[0m" << endl;
+    cout << "\033[35m2. Generate Intermediate File\033[0m" << endl;
+    cout << "\033[35m3. Perform Pass 1 (Symbol Table and Locations)\033[0m" << endl;
+    cout << "\033[35m4. Perform Pass 2 (Generate Object Code)\033[0m" << endl;
     cout << "\033[35m5. Generate HTME Records\033[0m" << endl;
-    cout << "\033[37m6. View Output Files\033[0m" << endl;
-    cout << "\033[31m7. Exit\033[0m" << endl;
+    cout << "\033[35m6. View Output Files\033[0m" << endl;
+    cout << "\033[35m7. Exit\033[0m" << endl;
     cout << "\033[1;34m============================\033[0m" << endl;
-    cout << "\033[1;33mEnter your choice: \033[0m";
+    cout << "\033[1;37mEnter your choice: \033[0m";
 }
 
 void viewFiles(const string &fileName) {
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
             }
 
             case 4: {
-                objCodeCalc(insts, symbols);
+                x = objCodeCalc(insts, symbols);
                 list<string> lines2;
                 for (sicx::Instruction inst : insts) {
                     stringstream ss;
@@ -127,9 +127,15 @@ int main(int argc, char *argv[]) {
                        << inst.toString() << "\t\t\t" << uppercase << inst.objectCode;
                     lines2.push_back(ss.str());
                 }
+                if (x != 0)
+                {
+                    cout << "\033[31mError during Pass 2; terminating.\033[0m" << endl;
+                    break;
+                } else {
                 WriteLines("", "pass2.txt", lines2);
                 cout << "\033[32mPass 2 completed: Object code generated in pass2.txt\033[0m" << endl;
                 break;
+                }
             }
 
             case 5: {
@@ -142,11 +148,11 @@ int main(int argc, char *argv[]) {
             case 6: {
                 cout << "\n\033[36mSelect a file to view:\033[0m" << endl;
                 cout << "\033[32m1. Intermediate File (intermediate.txt)\033[0m" << endl;
-                cout << "\033[33m2. Symbol Table (symbTable.txt)\033[0m" << endl;
-                cout << "\033[34m3. Pass 1 Output (pass1.txt)\033[0m" << endl;
-                cout << "\033[36m4. Pass 2 Output (pass2.txt)\033[0m" << endl;
-                cout << "\033[35m5. HTME Records (HTME.txt)\033[0m" << endl;
-                cout << "\033[1;33mEnter your choice: \033[0m";
+                cout << "\033[32m2. Symbol Table (symbTable.txt)\033[0m" << endl;
+                cout << "\033[32m3. Pass 1 Output (pass1.txt)\033[0m" << endl;
+                cout << "\033[32m4. Pass 2 Output (pass2.txt)\033[0m" << endl;
+                cout << "\033[32m5. HTME Records (HTME.txt)\033[0m" << endl;
+                cout << "\033[1;37mEnter your choice: \033[0m";
                 int fileChoice;
                 cin >> fileChoice;
                 switch (fileChoice) {
