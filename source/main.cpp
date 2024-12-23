@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
     if (pass1 || pass2 || symbol || inter || htme)
     {
-        ReadLines("", "in.txt", lines, v);
+        ReadLines("", path, lines, v);
         for (string &line : lines)
         {
             preProcess(line, v);
