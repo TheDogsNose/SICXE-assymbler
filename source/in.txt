@@ -8,7 +8,9 @@ PRROGA START            0000
         USE
         TIO
         MULR            A,X
-        USE         DEFAULTB
+        USE         DEFAULTB .hhhhhhhhhhhhh
+        STA             =X'07'
+        CLOAD        A,DATA,C
         CADD        A,WOD,Z 
         +LDA        GAMMA
         J               @RETADR
